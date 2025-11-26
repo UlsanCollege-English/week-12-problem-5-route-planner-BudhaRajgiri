@@ -1,9 +1,14 @@
 import pytest
+import sys, os
+
+# Ensure Python can import main.py from the parent folder
+sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+import main
+print("Using main.py from:", main.__file__)  # Debug line
 from main import route_planner
 
 
 # Normal tests (4)
-
 
 def test_unweighted_simple_path():
     graph = {
@@ -43,7 +48,6 @@ def test_weighted_start_equals_goal():
 
 # Edge-case tests (3)
 
-
 def test_missing_nodes_return_empty_and_none():
     graph_unweighted = {"A": ["B"], "B": ["A"]}
     graph_weighted = {"A": [("B", 2)], "B": [("A", 2)]}
@@ -80,7 +84,6 @@ def test_weighted_no_path():
 
 # Complex tests (3)
 
-
 def test_unweighted_larger_graph():
     graph = {
         "S": ["A", "B"],
@@ -94,7 +97,8 @@ def test_unweighted_larger_graph():
     path, cost = route_planner(graph, "S", "F", weighted=False)
     assert path[0] == "S"
     assert path[-1] == "F"
-    assert cost == 3  # S -> A/B -> C/D -> E -> F is 4 nodes => 3 edges
+    # Correct: shortest path has 4 edges
+    assert cost == 4
 
 
 def test_weighted_choose_correct_shortest():
@@ -134,11 +138,7 @@ def test_flag_changes_behavior(weighted_flag, expected_cost):
         "Y": [("X", 1), ("Z", 5)],
     }
 
-    if weighted_flag:
-        graph = weighted_graph
-    else:
-        graph = unweighted_graph
-
+    graph = weighted_graph if weighted_flag else unweighted_graph
     path, cost = route_planner(graph, "S", "Y", weighted=weighted_flag)
     assert path[0] == "S"
     assert path[-1] == "Y"

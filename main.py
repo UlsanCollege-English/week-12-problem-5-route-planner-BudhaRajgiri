@@ -1,37 +1,76 @@
-
-## main.py
-```python
 import heapq
 from collections import deque
 
-
-def route_planner(graph, start, goal, weighted):
+def route_planner(graph, start, goal, weighted=True):
     """
-    Plan a route between start and goal.
-
-    If weighted is False:
-        - graph: dict node -> list of neighbor nodes (unweighted).
-        - Use BFS to find a path with the fewest edges.
-        - Return (path, steps) where steps = number of edges.
-
-    If weighted is True:
-        - graph: dict node -> list of (neighbor, weight) pairs (positive weights).
-        - Use Dijkstra to find a path with the smallest total weight.
-        - Return (path, total_cost).
-
-    In both cases:
-        - If start or goal not in graph, or no path exists, return ([], None).
+    Compute the shortest path between start and goal.
+    - If weighted=True: use Dijkstra's algorithm (graph edges are (neighbor, weight)).
+    - If weighted=False: use BFS (graph edges are just neighbor names).
+    Returns (path, cost). If unreachable, returns ([], None).
     """
-    # TODO Step 1–3: Understand the two modes and write down inputs/outputs.
-    # TODO Step 4: Plan how to choose BFS or Dijkstra based on the `weighted` flag.
-    # TODO Step 5: Write pseudocode for the BFS branch and the Dijkstra branch.
-    # TODO Step 6: Implement helper functions (if you wish) and call them here.
-    # TODO Step 7: Test both unweighted and weighted graphs, including no-path cases.
-    # TODO Step 8: Reflect why BFS is used for unweighted and Dijkstra for weighted.
+    if start not in graph or goal not in graph:
+        return ([], None)
 
-    raise NotImplementedError("route_planner is not implemented yet")
+    if start == goal:
+        return ([start], 0)
 
+    # --- Unweighted case: BFS ---
+    if not weighted:
+        visited = {start}
+        parent = {start: None}
+        queue = deque([start])
 
-if __name__ == "__main__":
-    # Optional manual tests can go here
-    pass
+        while queue:
+            node = queue.popleft()
+            if node == goal:
+                break
+            for neighbor in graph.get(node, []):
+                if neighbor not in visited:
+                    visited.add(neighbor)
+                    parent[neighbor] = node
+                    queue.append(neighbor)
+
+        if goal not in parent:
+            return ([], None)
+
+        # Reconstruct path
+        path = []
+        node = goal
+        while node is not None:
+            path.append(node)
+            node = parent.get(node)
+        path.reverse()
+
+        return (path, len(path) - 1)
+
+    # --- Weighted case: Dijkstra ---
+    dist = {node: float("inf") for node in graph}
+    dist[start] = 0
+    parent = {start: None}
+    pq = [(0, start)]
+
+    while pq:
+        cost, node = heapq.heappop(pq)
+        if cost > dist[node]:
+            continue
+        if node == goal:
+            break
+        for neighbor, weight in graph.get(node, []):
+            new_cost = cost + weight
+            if new_cost < dist[neighbor]:
+                dist[neighbor] = new_cost
+                parent[neighbor] = node
+                heapq.heappush(pq, (new_cost, neighbor))
+
+    if dist[goal] == float("inf"):
+        return ([], None)
+
+    # Reconstruct path
+    path = []
+    node = goal
+    while node is not None:
+        path.append(node)
+        node = parent.get(node)
+    path.reverse()
+
+    return (path, dist[goal])
